@@ -1,4 +1,4 @@
-"""QueryLens — FastAPI app. NL question -> LLM SQL -> SAFETY GATE -> read-only SQLite -> chart."""
+"""QueryLens: FastAPI app. NL question -> LLM SQL -> SAFETY GATE -> read-only SQLite -> chart."""
 from __future__ import annotations
 
 import os
@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from . import db, llm, safety
 
-app = FastAPI(title="QueryLens — Text-to-SQL", version="0.1.0")
+app = FastAPI(title="QueryLens: Text-to-SQL", version="0.1.0")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 

@@ -74,11 +74,11 @@ def _enforce_limit(ast: exp.Expression) -> exp.Expression:
 def validate_sql(sql: str) -> ValidationResult:
     sql = sql.strip().rstrip(";").strip()
 
-    # 6. no comments, ever — injection can't hide behind them (checked BEFORE any parsing)
+    # 6. no comments, ever: injection can't hide behind them (checked BEFORE any parsing)
     if "--" in sql or "/*" in sql:
         return ValidationResult(False, "SQL comments are not allowed", sql)
 
-    # 6. no comments, ever — injection can't hide behind them
+    # 6. no comments, ever: injection can't hide behind them
     if "--" in sql or "/*" in sql:
         return ValidationResult(False, "SQL comments are not allowed", sql)
 

@@ -57,7 +57,7 @@ def run_full() -> dict:
     from app import llm
 
     if not llm.API_KEY:
-        print("LLM not configured — running offline mode instead. Set .env for execution accuracy.")
+        print("LLM not configured: running offline mode instead. Set .env for execution accuracy.")
         return run_offline()
 
     conn = db.connect_readonly()
