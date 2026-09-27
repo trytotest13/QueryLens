@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>QueryLens — ask your data</title>
+  <title>QueryLens: ask your data</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
     :root { color-scheme: dark; }
@@ -11,25 +11,29 @@
     body { margin: 0; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
            background: #0b1220; color: #e2e8f0; }
     .wrap { max-width: 900px; margin: 0 auto; padding: 28px 16px 64px; }
-    h1 { font-size: 24px; margin: 0; } h1 span { color: #34d399; }
+    h1 { font-size: 24px; margin: 0; } h1 span { color: #F59E0B; }
     .muted { color: #64748b; font-size: 13px; }
     .card { background: #101a2e; border: 1px solid #1e293b; border-radius: 16px; padding: 18px;
             margin-top: 16px; }
     .row { display: flex; gap: 8px; }
     input[type=text] { flex: 1; background: #0b1220; color: #e2e8f0; border: 1px solid #334155;
                        border-radius: 10px; padding: 12px 14px; font-size: 14px; outline: none; }
-    input[type=text]:focus { border-color: #34d399; }
-    button { border: 0; border-radius: 10px; background: #10b981; color: #052e1c; font-weight: 700;
+    input[type=text]:focus { border-color: #F59E0B; }
+    button { border: 0; border-radius: 10px; background: #F59E0B; color: #1C1917; font-weight: 700;
              font-size: 14px; padding: 12px 18px; cursor: pointer; }
     button:disabled { opacity: .5; cursor: default; }
     .chip { background: transparent; color: #94a3b8; border: 1px dashed #334155; font-weight: 500;
             font-size: 12px; padding: 6px 10px; }
-    .chip:hover { color: #34d399; border-color: #34d399; }
+    .chip:hover { color: #F59E0B; border-color: #F59E0B; }
     pre { background: #0b1220; border: 1px solid #1e293b; border-radius: 10px; padding: 12px;
-          font-size: 12.5px; overflow-x: auto; color: #a5f3d0; }
-    .badge { display: inline-block; background: #052e1c; color: #34d399; border: 1px solid #10b981;
-             border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600; margin-left: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+          font-size: 12.5px; overflow-x: auto; color: #FDE68A; }
+    .badge { display: inline-block; background: #1C1917; color: #F59E0B; border: 1px solid #F59E0B;
+             padding: 3px 10px; font-size: 10.5px; font-weight: 600; margin-left: 8px;
+             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+             text-transform: uppercase; letter-spacing: .08em;
+             transform: rotate(-1.5deg); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;
+        font-variant-numeric: tabular-nums; }
     th { text-align: left; color: #64748b; font-weight: 600; border-bottom: 1px solid #1e293b; padding: 6px 8px; }
     td { border-bottom: 1px solid #16223a; padding: 6px 8px; }
     .error { background: #2a1215; color: #fca5a5; border: 1px solid #7f1d1d; border-radius: 10px;
@@ -40,7 +44,7 @@
 <body>
   <div class="wrap">
     <h1>Query<span>Lens</span> <span class="badge" style="margin-left:10px">6-check SQL safety gate</span></h1>
-    <p class="muted">Ask in plain English — the LLM writes SQL, a sqlglot AST gate validates it (SELECT-only, table allowlist, forced LIMIT, read-only connection), then you get a table + chart.</p>
+    <p class="muted">Ask in plain English: the LLM writes SQL, a sqlglot AST gate validates it (SELECT-only, table allowlist, forced LIMIT, read-only connection), then you get a table + chart.</p>
 
     <div class="card">
       <div class="row">
@@ -92,7 +96,7 @@ async function ask(question) {
     });
     const d = await r.json();
     if (!r.ok) {
-      const msg = typeof d.detail === "object" ? (d.detail.error + " — " + d.detail.sql) : d.detail;
+      const msg = typeof d.detail === "object" ? (d.detail.error + ": " + d.detail.sql) : d.detail;
       $("err").innerHTML = `<div class="error">${(msg || "error").toString().replace(/</g, "&lt;")}</div>`;
     } else {
       $("result").style.display = "block";
@@ -104,7 +108,7 @@ async function ask(question) {
       if (chart) chart.destroy();
       chart = d.chart ? new Chart($("chart"), {
         type: "bar",
-        data: { labels: d.chart.labels, datasets: [{ label: d.chart.title, data: d.chart.values, backgroundColor: "#10b981" }] },
+        data: { labels: d.chart.labels, datasets: [{ label: d.chart.title, data: d.chart.values, backgroundColor: "#F59E0B" }] },
         options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#64748b" } }, y: { ticks: { color: "#64748b" } } } }
       }) : null;
     }
