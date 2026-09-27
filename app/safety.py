@@ -1,4 +1,4 @@
-"""The SQL safety gate — the interview gold of this project.
+"""The SQL safety gate: every query passes through here before it can run.
 
 Six checks, in order:
   1. PARSE        must parse as SQL (sqlglot, sqlite dialect)

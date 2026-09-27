@@ -1,60 +1,46 @@
-# QueryLens — Text-to-SQL with a 6-Check Safety Gate
+# QueryLens
 
-Ask questions in plain English → the LLM writes SQL → **a sqlglot AST safety gate validates it** → a read-only SQLite connection executes it → results render as a table + bar chart. The safety engineering is what makes this project stand out in interviews.
+Ask questions about a database in plain English. The model writes the SQL, a validation layer checks it before anything runs, and you get the rows back as a table plus a bar chart.
 
-## The safety gate (interview gold)
+The interesting part is not the SQL generation, it is what happens between the model and the database. Letting an LLM talk straight to a database is a bad idea, so every query passes through a gate before execution.
 
-| # | Check | Why |
-|---|---|---|
-| 1 | **Parse** (sqlite dialect) | reject anything the parser can't understand |
-| 2 | **Single statement** | block `SELECT 1; DROP TABLE x` chaining |
-| 3 | **SELECT-only AST** | walk the tree; reject INSERT/UPDATE/DELETE/DROP/CREATE/ALTER/ATTACH/PRAGMA/GRANT anywhere |
-| 4 | **Table allowlist** | only the 4 known business tables; blocks `sqlite_master` snooping |
-| 5 | **Forced LIMIT ≤ 100** | no runaway queries, no full-table exfiltration |
-| 6 | **Comment rejection + function blacklist** | any SQL containing `--` or `/*` is rejected outright; `loadfile`/`readfile` etc. blocked |
+## The gate
 
-On top of the gate: queries run through a **read-only connection** (`file:...?mode=ro` + `PRAGMA query_only = ON`) — defense in depth.
+Six checks, in order:
 
-## Architecture
+1. The SQL must parse (sqlglot, sqlite dialect).
+2. Exactly one statement. Semicolon-chained statements are rejected.
+3. The AST must be a SELECT. INSERT, UPDATE, DELETE, DROP, CREATE, ALTER, ATTACH, PRAGMA and GRANT are rejected anywhere in the tree, not just at the top level.
+4. Every table in the query must be one of the four known business tables. This blocks `sqlite_master` snooping.
+5. A LIMIT is always present and capped at 100, so a query cannot dump or scan the whole database.
+6. Any query containing a `--` or `/*` comment is rejected outright, because comments are how injection payloads hide. A small function blacklist (`loadfile`, `readfile`, etc.) runs on the AST too.
 
-```mermaid
-flowchart LR
-  Q[NL question] --> L[LLM<br/>strict JSON: sql + chart col]
-  L --> G{SAFETY GATE<br/>6 checks}
-  G -->|reject → 400 + reason| U[User sees why]
-  G -->|pass → normalized SQL| D[(SQLite<br/>read-only URI)]
-  D --> T[Table]
-  D --> C[Chart.js bar chart]
+On top of the gate, queries execute through a connection opened with `mode=ro` and `PRAGMA query_only = ON`. The gate is not the only thing standing between the model and your data, it is the second thing.
+
+One lesson from testing this: the comment check has to run before anything else touches the SQL. My first version stripped comments before validating, which silently turned `SELECT * FROM customers -- ); DROP TABLE x` into a harmless SELECT that passed the gate. Neutralizing an attack and rejecting it are not the same thing, and only one of them is inspectable.
+
+## Running it
+
 ```
-
-## Run it
-
-```bash
 python -m venv .venv
 .venv/Scripts/pip install -r requirements.txt
-cp .env.example .env                     # set OPENAI_API_KEY
+cp .env.example .env    # set OPENAI_API_KEY
 .venv/Scripts/python -m uvicorn app.main:app --reload
-# open http://localhost:8000
 ```
 
-The sample e-commerce DB (40 customers, 15 products, 120 orders, 250 order items, seeded deterministically) builds itself on first run.
+Open http://localhost:8000. The sample database (40 customers, 15 products, 120 orders, 250 order items, seeded deterministically) builds itself on first run.
 
-## Evals
+## The eval
 
-```bash
-# zero API key — proves the gate blocks 12 malicious SQL attempts:
-.venv/Scripts/python evals/run_eval.py --offline
-# full: execution accuracy vs 20 golden SQL results (needs .env):
-.venv/Scripts/python evals/run_eval.py
+```
+.venv/Scripts/python evals/run_eval.py --offline   # safety gate only, no API key
+.venv/Scripts/python evals/run_eval.py             # execution accuracy vs golden SQL
 ```
 
-## Resume bullet
+The offline mode throws 12 deliberately malicious queries at the gate (drops, inserts, pragma, chained statements, comment smuggling, unknown tables) and currently blocks all 12 while passing a legitimate join query. Full mode compares result sets of generated SQL against 20 hand-written golden queries.
 
-> Built a text-to-SQL analytics dashboard with a 6-check SQL safety gate (sqlglot AST validation, table allowlist, forced LIMIT, read-only connections) — blocked 12/12 malicious SQL attempts in an offline eval; X% execution accuracy on a 20-question benchmark.
+## Next steps
 
-## Roadmap
-
-- [ ] PostgreSQL + real analytics DB instead of SQLite
-- [ ] Query result caching + cost guardrails
-- [ ] Streaming SQL generation with per-clause validation
-- [ ] Follow-up questions ("now break that down by month") with conversation context
+- PostgreSQL instead of SQLite, so it works against a real analytics DB.
+- Cache identical questions instead of paying for the model twice.
+- Follow-up questions with conversation context ("now break that down by month").
