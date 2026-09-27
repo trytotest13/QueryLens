@@ -9,9 +9,7 @@ import random
 import sqlite3
 from pathlib import Path
 
-from dotenv import load_dotenv
 
-load_dotenv()
 
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / "data" / "shop.db"
