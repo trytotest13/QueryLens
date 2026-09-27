@@ -1,13 +1,14 @@
 """QueryLens — FastAPI app. NL question -> LLM SQL -> SAFETY GATE -> read-only SQLite -> chart."""
 from __future__ import annotations
 
+import os
 import sqlite3
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field
 
 from . import db, llm, safety
 
@@ -15,9 +16,29 @@ app = FastAPI(title="QueryLens — Text-to-SQL", version="0.1.0")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
+MAX_QUESTION_CHARS = 500
+
+# Optional shared-secret guard for /api endpoints (API_TOKEN in .env; the UI
+# prompts once and stores the value in localStorage).
+API_TOKEN = os.getenv("API_TOKEN", "")
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    def with_headers(resp):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("X-Frame-Options", "DENY")
+        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        return resp
+
+    protected = request.url.path.startswith("/api")
+    if API_TOKEN and protected and request.headers.get("X-API-Token") != API_TOKEN:
+        return with_headers(JSONResponse({"detail": "unauthorized"}, status_code=401))
+    return with_headers(await call_next(request))
+
 
 class QueryIn(BaseModel):
-    question: str
+    question: str = Field(max_length=MAX_QUESTION_CHARS)
 
 
 @app.on_event("startup")
@@ -85,7 +106,6 @@ def query(body: QueryIn) -> dict:
 
     return {
         "sql": verdict.normalized_sql,
-        "rejected_reason": None,
         "columns": columns,
         "rows": rows,
         "chart": chart,

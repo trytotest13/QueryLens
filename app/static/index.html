@@ -69,12 +69,24 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let chart = null;
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+async function api(url, opts = {}) {
+  opts.headers = Object.assign({}, opts.headers, { "X-API-Token": localStorage.getItem("api_token") || "" });
+  const r = await fetch(url, opts);
+  if (r.status === 401) {
+    const t = prompt("This server needs an API token (API_TOKEN in its .env)");
+    if (t) { localStorage.setItem("api_token", t); location.reload(); }
+    throw new Error("unauthorized");
+  }
+  return r;
+}
 
 async function ask(question) {
   if (!question) return;
   $("go").disabled = true; $("err").innerHTML = ""; $("result").style.display = "none";
   try {
-    const r = await fetch("/api/query", {
+    const r = await api("/api/query", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
     });
@@ -86,7 +98,7 @@ async function ask(question) {
       $("result").style.display = "block";
       $("sql").textContent = d.sql;
       const thead = "<tr>" + d.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
-      const tbody = d.rows.slice(0, 25).map(r => "<tr>" + r.map(v => `<td>${v ?? ""}</td>`).join("") + "</tr>").join("");
+      const tbody = d.rows.slice(0, 25).map(r => "<tr>" + r.map(v => `<td>${esc(v ?? "")}</td>`).join("") + "</tr>").join("");
       $("table").innerHTML = thead + tbody;
       $("lat").textContent = `${d.rows.length} rows · ${d.latency_ms} ms (LLM + safety gate + SQLite)`;
       if (chart) chart.destroy();
