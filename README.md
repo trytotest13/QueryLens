@@ -44,3 +44,4 @@ The offline mode throws 12 deliberately malicious queries at the gate (drops, in
 - PostgreSQL instead of SQLite, so it works against a real analytics DB.
 - Cache identical questions instead of paying for the model twice.
 - Follow-up questions with conversation context ("now break that down by month").
+"# text-to-sql" 
