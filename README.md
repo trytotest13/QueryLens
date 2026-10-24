@@ -1,5 +1,11 @@
 # QueryLens
 
+[![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688)](https://fastapi.tiangolo.com) [![sqlglot](https://img.shields.io/badge/sqlglot-AST%20validation-4B8BBE)](https://github.com/tobymao/sqlglot) [![Chart.js](https://img.shields.io/badge/Chart.js-4-FF6384)](https://chartjs.org)
+
+![04-text-to-sql](docs/screenshot-dashboard.png)
+
+*The dashboard: ask in English, the safety gate validates the SQL, results land in a table and chart.*
+
 Ask questions about a database in plain English. The model writes the SQL, a validation layer checks it before anything runs, and you get the rows back as a table plus a bar chart.
 
 The interesting part is not the SQL generation, it is what happens between the model and the database. Letting an LLM talk straight to a database is a bad idea, so every query passes through a gate before execution.
