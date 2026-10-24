@@ -15,8 +15,10 @@
     .muted { color: #64748b; font-size: 13px; }
     .card { background: #101a2e; border: 1px solid #1e293b; border-radius: 16px; padding: 18px;
             margin-top: 16px; }
+    button { cursor: pointer; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     .row { display: flex; gap: 8px; }
-    input[type=text] { flex: 1; background: #0b1220; color: #e2e8f0; border: 1px solid #334155;
+    input[type=text] { flex: 1; font-size: 16px; background: #0b1220; color: #e2e8f0; border: 1px solid #334155;
                        border-radius: 10px; padding: 12px 14px; font-size: 14px; outline: none; }
     input[type=text]:focus { border-color: #F59E0B; }
     button { border: 0; border-radius: 10px; background: #F59E0B; color: #1C1917; font-weight: 700;
@@ -48,7 +50,7 @@
 
     <div class="card">
       <div class="row">
-        <input type="text" id="q" placeholder="e.g. Top 5 cities by revenue" />
+        <input type="text" id="q" aria-label="Question about the data" placeholder="e.g. Top 5 cities by revenue" />
         <button id="go">Ask</button>
       </div>
       <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:6px">
@@ -88,7 +90,7 @@ async function api(url, opts = {}) {
 
 async function ask(question) {
   if (!question) return;
-  $("go").disabled = true; $("err").innerHTML = ""; $("result").style.display = "none";
+  $("go").disabled = true; $("go").textContent = "Thinking…"; $("err").innerHTML = ""; $("result").style.display = "none";
   try {
     const r = await api("/api/query", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -113,7 +115,7 @@ async function ask(question) {
       }) : null;
     }
   } catch { $("err").innerHTML = `<div class="error">network error</div>`; }
-  $("go").disabled = false;
+  $("go").disabled = false; $("go").textContent = "Ask";
 }
 
 $("go").addEventListener("click", () => ask($("q").value.trim()));
